@@ -16,6 +16,9 @@ public class SystemMonitor {
             SystemMetrics metrics = new SystemMetrics(currentDiskUsage);
             System.out.println("\nSuccessfully collected metrics:");
             System.out.println(metrics);
+
+            // Save the collected metrics to the database
+            DatabaseManager.saveMetrics(metrics);
         } else {
             System.err.println("Failed to collect system metrics.");
         }
