@@ -8,38 +8,55 @@ public class SystemMonitor {
     public static void main(String[] args) {
         System.out.println("Starting System Monitor Tool...");
 
-        // Execute the Linux disk usage command
-        checkDiskUsage();
+        // Execute and parse disk usage
+        double currentDiskUsage = getDiskUsagePercentage();
+
+        if (currentDiskUsage >= 0) {
+            // Create a metrics object with the parsed data
+            SystemMetrics metrics = new SystemMetrics(currentDiskUsage);
+            System.out.println("\nSuccessfully collected metrics:");
+            System.out.println(metrics);
+        } else {
+            System.err.println("Failed to collect system metrics.");
+        }
     }
 
-    public static void checkDiskUsage() {
-        // 'df -h' is the Linux command to check free disk space
+    public static double getDiskUsagePercentage() {
         String[] command = {"df", "-h"};
+        double usage = -1; // -1 indicates an error or not found
 
         try {
-            // ProcessBuilder is used to create and start operating system processes
             ProcessBuilder processBuilder = new ProcessBuilder(command);
-
-            // Start the process
             Process process = processBuilder.start();
 
-            // Read the output from the command execution
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
 
-            System.out.println("\n--- Linux 'df -h' Output ---");
+            // Skip the header line of 'df -h'
+            reader.readLine();
+
             while ((line = reader.readLine()) != null) {
-                System.out.println(line);
+                // We are looking for the root filesystem line (ends with space and /)
+                if (line.endsWith(" /")) {
+                    // Split the line by spaces to isolate columns
+                    String[] tokens = line.split("\\s+");
+
+                    // In 'df -h', the Use% column is typically the 5th column (index 4)
+                    // Example token: "45%"
+                    String usePercentageStr = tokens[4].replace("%", "");
+
+                    // Convert the string to a double
+                    usage = Double.parseDouble(usePercentageStr);
+                    break;
+                }
             }
 
-            // Wait for the process to finish and get the exit code (0 means success)
-            int exitCode = process.waitFor();
-            System.out.println("----------------------------");
-            System.out.println("Process finished with exit code: " + exitCode);
+            process.waitFor();
 
         } catch (Exception e) {
-            System.err.println("Error executing Linux command: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("Error parsing disk usage: " + e.getMessage());
         }
+
+        return usage;
     }
 }
