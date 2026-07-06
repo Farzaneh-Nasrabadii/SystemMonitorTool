@@ -22,16 +22,17 @@ public class DatabaseManager {
      * Inserts a new system metrics record into the database.
      */
     public static void saveMetrics(SystemMetrics metrics) {
-        String sql = "INSERT INTO metrics_history (disk_usage, recorded_at) VALUES (?, ?)";
+        // Updated SQL to include ram_usage
+        String sql = "INSERT INTO metrics_history (disk_usage, ram_usage, recorded_at) VALUES (?, ?, ?)";
 
         try (Connection conn = connect();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             // Bind values to the SQL query parameters
             pstmt.setDouble(1, metrics.getDiskUsagePercentage());
-            pstmt.setTimestamp(2, Timestamp.valueOf(metrics.getTimestamp()));
+            pstmt.setDouble(2, metrics.getRamUsagePercentage()); // New parameter
+            pstmt.setTimestamp(3, Timestamp.valueOf(metrics.getTimestamp()));
 
-            // Execute the insert query
             int rowsInserted = pstmt.executeUpdate();
             if (rowsInserted > 0) {
                 System.out.println("Data successfully saved to PostgreSQL database.");

@@ -4,12 +4,14 @@ import java.time.LocalDateTime;
 
 public class SystemMetrics {
     private double diskUsagePercentage;
+    private double ramUsagePercentage; // New field for RAM
     private LocalDateTime timestamp;
 
-    // Constructor
-    public SystemMetrics(double diskUsagePercentage) {
+    // Updated Constructor
+    public SystemMetrics(double diskUsagePercentage, double ramUsagePercentage) {
         this.diskUsagePercentage = diskUsagePercentage;
-        this.timestamp = LocalDateTime.now(); // Captures the exact time of collection
+        this.ramUsagePercentage = ramUsagePercentage;
+        this.timestamp = LocalDateTime.now();
     }
 
     // Getters
@@ -17,15 +19,19 @@ public class SystemMetrics {
         return diskUsagePercentage;
     }
 
+    public double getRamUsagePercentage() {
+        return ramUsagePercentage;
+    }
+
     public LocalDateTime getTimestamp() {
         return timestamp;
     }
 
-    // Overriding toString() for beautiful logging
     @Override
     public String toString() {
         return "SystemMetrics {" +
                 "diskUsagePercentage=" + diskUsagePercentage + "%" +
+                ", ramUsagePercentage=" + ramUsagePercentage + "%" +
                 ", timestamp=" + timestamp +
                 '}';
     }

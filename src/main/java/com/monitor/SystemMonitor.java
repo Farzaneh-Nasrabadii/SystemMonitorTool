@@ -8,25 +8,33 @@ public class SystemMonitor {
     public static void main(String[] args) {
         System.out.println("Starting System Monitor Tool...");
 
-        // Execute and parse disk usage
+        // Step 1: Get Disk Usage
         double currentDiskUsage = getDiskUsagePercentage();
 
-        if (currentDiskUsage >= 0) {
-            // Create a metrics object with the parsed data
-            SystemMetrics metrics = new SystemMetrics(currentDiskUsage);
+        // Step 2: Get RAM Usage (New Part)
+        double currentRamUsage = getRamUsagePercentage();
+
+        // Check if both metrics were collected successfully
+        if (currentDiskUsage >= 0 && currentRamUsage >= 0) {
+            // Step 3: Create a metrics object with both values
+            SystemMetrics metrics = new SystemMetrics(currentDiskUsage, currentRamUsage);
             System.out.println("\nSuccessfully collected metrics:");
             System.out.println(metrics);
 
-            // Save the collected metrics to the database
+            // Step 4: Save everything to PostgreSQL
             DatabaseManager.saveMetrics(metrics);
         } else {
             System.err.println("Failed to collect system metrics.");
         }
     }
 
-    public static double getDiskUsagePercentage() {
-        String[] command = {"df", "-h"};
-        double usage = -1; // -1 indicates an error or not found
+    /**
+     * Executes the Linux 'free -m' command and parses the output
+     * to calculate the RAM usage percentage.
+     */
+    public static double getRamUsagePercentage() {
+        String[] command = {"free", "-m"};
+        double usage = -1;
 
         try {
             ProcessBuilder processBuilder = new ProcessBuilder(command);
@@ -35,25 +43,58 @@ public class SystemMonitor {
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
 
-            // Skip the header line of 'df -h'
-            reader.readLine();
-
             while ((line = reader.readLine()) != null) {
-                // We are looking for the root filesystem line (ends with space and /)
-                if (line.endsWith(" /")) {
-                    // Split the line by spaces to isolate columns
+                // We are looking for the line starting with 'Mem:'
+                if (line.startsWith("Mem:")) {
+                    // Split the line by spaces to get columns
                     String[] tokens = line.split("\\s+");
 
-                    // In 'df -h', the Use% column is typically the 5th column (index 4)
-                    // Example token: "45%"
-                    String usePercentageStr = tokens[4].replace("%", "");
+                    // In 'free -m' output:
+                    // tokens[1] is Total RAM (e.g., 7931)
+                    // tokens[2] is Used RAM (e.g., 3250)
+                    double totalRam = Double.parseDouble(tokens[1]);
+                    double usedRam = Double.parseDouble(tokens[2]);
 
-                    // Convert the string to a double
+                    // Calculate percentage: (used / total) * 100
+                    usage = (usedRam / totalRam) * 100;
+
+                    // Round to 2 decimal places for clean data
+                    usage = Math.round(usage * 100.0) / 100.0;
+                    break;
+                }
+            }
+            process.waitFor();
+
+        } catch (Exception e) {
+            System.err.println("Error parsing RAM usage: " + e.getMessage());
+        }
+
+        return usage;
+    }
+
+    /**
+     * Executes the Linux 'df -h' command and parses disk usage.
+     */
+    public static double getDiskUsagePercentage() {
+        String[] command = {"df", "-h"};
+        double usage = -1;
+
+        try {
+            ProcessBuilder processBuilder = new ProcessBuilder(command);
+            Process process = processBuilder.start();
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+            reader.readLine(); // Skip header
+
+            while ((line = reader.readLine()) != null) {
+                if (line.endsWith(" /")) {
+                    String[] tokens = line.split("\\s+");
+                    String usePercentageStr = tokens[4].replace("%", "");
                     usage = Double.parseDouble(usePercentageStr);
                     break;
                 }
             }
-
             process.waitFor();
 
         } catch (Exception e) {
