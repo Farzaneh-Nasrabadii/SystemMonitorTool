@@ -8,30 +8,41 @@ public class SystemMonitor {
     public static void main(String[] args) {
         System.out.println("Starting System Monitor Tool...");
 
-        // Step 1: Get Disk Usage
         double currentDiskUsage = getDiskUsagePercentage();
-
-        // Step 2: Get RAM Usage (New Part)
         double currentRamUsage = getRamUsagePercentage();
 
-        // Check if both metrics were collected successfully
         if (currentDiskUsage >= 0 && currentRamUsage >= 0) {
-            // Step 3: Create a metrics object with both values
             SystemMetrics metrics = new SystemMetrics(currentDiskUsage, currentRamUsage);
             System.out.println("\nSuccessfully collected metrics:");
             System.out.println(metrics);
 
-            // Step 4: Save everything to PostgreSQL
+            // 1. Save to PostgreSQL Database
             DatabaseManager.saveMetrics(metrics);
+
+            // 2. Check Thresholds and Send Alerts (New Part)
+            // For testing purposes, you can lower these numbers (e.g., to 10.0) to force an email
+            double DISK_THRESHOLD = 80.0;
+            double RAM_THRESHOLD = 80.0;
+
+            if (currentDiskUsage > DISK_THRESHOLD || currentRamUsage > RAM_THRESHOLD) {
+                String emailSubject = "⚠️ CRITICAL: Server Resource Alert!";
+                String emailBody = "Attention Admin,\n\n" +
+                        "Your server resources have exceeded the allowed limit:\n" +
+                        "- Current Disk Usage: " + currentDiskUsage + "%\n" +
+                        "- Current RAM Usage: " + currentRamUsage + "%\n\n" +
+                        "Please check the server immediately.";
+
+                EmailAlertManager.sendEmailAlert(emailSubject, emailBody);
+            } else {
+                System.out.println("System health is OK. No alerts needed.");
+            }
+
         } else {
             System.err.println("Failed to collect system metrics.");
         }
     }
 
-    /**
-     * Executes the Linux 'free -m' command and parses the output
-     * to calculate the RAM usage percentage.
-     */
+
     public static double getRamUsagePercentage() {
         String[] command = {"free", "-m"};
         double usage = -1;
