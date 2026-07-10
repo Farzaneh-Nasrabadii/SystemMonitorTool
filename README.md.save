@@ -1,0 +1,31 @@
+# 📊 System Monitor Tool (Systemüberwachung-Tool)
+
+A lightweight, automated system monitoring utility written in Java. This tool runs continuously in a Linux/Ubuntu background environment, periodically tracks system performance metrics (RAM and Disk usage), archives them in a PostgreSQL database, and sends instant email alerts via JavaMail API if any critical hardware thresholds are breached.
+
+Ein leichtgewichtiges, automatisiertes Systemüberwachungstool, geschrieben in Java. Dieses Tool läuft kontinuierlich im Linux/Ubuntu-Hintergrund, erfasst regelmäßig Systemleistungsdaten (RAM- und Festplattenauslastung), archiviert diese in einer PostgreSQL-Datenbank und sendet sofortige E-Mail-Benachrichtigungen über die JavaMail-API, wenn kritische Hardware-Schwellenwerte überschritten werden.
+
+---
+
+## 🚀 Key Features | Hauptmerkmale
+
+* **Automated Resource Tracking:** Periodically fetches real-time Disk and Memory usage using native Linux commands (`df`, `free`).
+*ity written in Java. This tool runSaves collected system metrics in a structured PostgreSQL database for history tracking.
+*ing utility written in Java.Automatically triggers critical email notifications to the system administrator via secure Gmail SMTP (App Passwords) if resource consumption exceeds specified thresholds.
+*nd environment, periodically tracks sysBuilt withm Monitor Tool (Systemüberwato execute seamlessly as a hands-free background process (`nohup`).
+*omated system monitoring utility writUses environment variables to securely handle database credentials and sensitive API tokens without hardcoding.
+
+---
+
+## 🛠️ Tech Stack | Technologien
+
+*inux/Ubuntu bacJava 21
+*em Monitor ToolPostgreSQL
+*Monitor Tool (SystemübeMaven
+*stem Monitor TooJavaMail API (javax.mail), PostgreSQL JDBC Driver
+*A lightweight, autLinux / Ubuntu (WSL supported)
+
+---
+
+## ⚙️ Configuration & Environment Variables
+
+To protect sensitive information, the 

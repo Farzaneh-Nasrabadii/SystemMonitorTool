@@ -6,10 +6,10 @@ import java.sql.PreparedStatement;
 import java.sql.Timestamp;
 
 public class DatabaseManager {
-    // Database connection credentials
-    private static final String URL = "jdbc:postgresql://localhost:5432/system_monitor";
-    private static final String USER = "postgres";
-    private static final String PASSWORD = "fr001009"; // Replace with your actual PostgreSQL password
+    // Read database configurations from environment variables, or use defaults
+    private static final String URL = System.getenv("DB_URL") != null ? System.getenv("DB_URL") : "jdbc:postgresql://localhost:5432/system_monitor";
+    private static final String USER = System.getenv("DB_USER") != null ? System.getenv("DB_USER") : "postgres";
+    private static final String PASSWORD = System.getenv("DB_PASSWORD") != null ? System.getenv("DB_PASSWORD") : "fr001009";
 
     /**
      * Establishes a connection to the PostgreSQL database.

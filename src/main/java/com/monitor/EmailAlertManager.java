@@ -15,10 +15,10 @@ public class EmailAlertManager {
     private static final String SMTP_HOST = "smtp.gmail.com";
     private static final String SMTP_PORT = "587";
 
-    // Credentials
-    private static final String SENDER_EMAIL = "farzanehnasrabadii@gmail.com";
-    private static final String APP_PASSWORD = "yqdznwqlzzaafxuy";
-    private static final String RECEIVER_EMAIL = "farzanehnasrabadii@gmail.com"; // Can be the same email to test it
+    // Read credentials from environment variables
+    private static final String SENDER_EMAIL = System.getenv("EMAIL_USER") != null ? System.getenv("EMAIL_USER") : "farzanehnasrabadii@gmail.com";
+    private static final String APP_PASSWORD = System.getenv("EMAIL_PASS") != null ? System.getenv("EMAIL_PASS") : "yqdznwqlzzaafxuy";
+    private static final String RECEIVER_EMAIL = System.getenv("EMAIL_RECEIVER") != null ? System.getenv("EMAIL_RECEIVER") : "faranehnasrabadii@gmail.com";
 
     /**
      * Sends an email notification to the administrator.
