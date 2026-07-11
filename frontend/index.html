@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Monitor Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1e1e2e;
+            color: #cdd6f4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        h1 { color: #89b4fa; margin-bottom: 30px; }
+        .container { display: flex; gap: 40px; }
+        .card {
+            background-color: #313244;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            text-align: center;
+            width: 180px;
+        }
+        .value { font-size: 3rem; font-weight: bold; margin-top: 10px; }
+        #ram-val { color: #f38ba8; }
+        #disk-val { color: #a6e3a1; }
+        .status { margin-top: 20px; font-size: 0.9rem; color: #a6adc8; }
+    </style>
+</head>
+<body>
+
+<h1>📊 System Monitor Dashboard</h1>
+
+<div class="container">
+    <div class="card">
+        <h3>RAM Usage</h3>
+        <div id="ram-val" class="value">0%</div>
+    </div>
+    <div class="card">
+        <h3>Disk Usage</h3>
+        <div id="disk-val" class="value">0%</div>
+    </div>
+</div>
+
+<div id="status" class="status">Connecting to Java Backend...</div>
+
+<script>
+    // Connect to the Java WebSocket Server
+    const socket = new WebSocket('ws://localhost:8080');
+
+    socket.onopen = () => {
+        document.getElementById('status').innerText = '🟢 Connected to Live Stream';
+        document.getElementById('status').style.color = '#a6e3a1';
+    };
+
+    socket.onmessage = (event) => {
+        // Parse the real-time JSON data from Java
+        const data = JSON.parse(event.data);
+
+        // Update the UI dynamically
+        document.getElementById('ram-val').innerText = data.ram.toFixed(1) + '%';
+        document.getElementById('disk-val').innerText = data.disk.toFixed(1) + '%';
+    };
+
+    socket.onclose = () => {
+        document.getElementById('status').innerText = '🔴 Disconnected from Server';
+        document.getElementById('status').style.color = '#f38ba8';
+    };
+
+    socket.onerror = (error) => {
+        console.error('WebSocket Error:', error);
+    };
+</script>
+</body>
+</html>
