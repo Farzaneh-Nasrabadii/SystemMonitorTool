@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>System Monitor Dashboard</title>
+    <!-- Include Chart.js via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -13,22 +15,31 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
+            padding: 20px;
         }
-        h1 { color: #89b4fa; margin-bottom: 30px; }
-        .container { display: flex; gap: 40px; }
+        h1 { color: #89b4fa; margin-bottom: 20px; }
+        .container { display: flex; gap: 30px; margin-bottom: 30px; }
         .card {
             background-color: #313244;
-            padding: 30px;
+            padding: 20px;
             border-radius: 15px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             text-align: center;
-            width: 180px;
+            width: 150px;
         }
-        .value { font-size: 3rem; font-weight: bold; margin-top: 10px; }
+        .value { font-size: 2.5rem; font-weight: bold; margin-top: 5px; }
         #ram-val { color: #f38ba8; }
         #disk-val { color: #a6e3a1; }
+        .chart-container {
+            width: 80%;
+            max-width: 700px;
+            background-color: #313244;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
         .status { margin-top: 20px; font-size: 0.9rem; color: #a6adc8; }
     </style>
 </head>
@@ -47,10 +58,55 @@
     </div>
 </div>
 
+<!-- Live Chart Section -->
+<div class="chart-container">
+    <canvas id="liveChart"></canvas>
+</div>
+
 <div id="status" class="status">Connecting to Java Backend...</div>
 
 <script>
-    // Connect to the Java WebSocket Server
+    const ctx = document.getElementById('liveChart').getContext('2d');
+
+    // Initialize Chart.js with empty data
+    const liveChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [], // Time labels will go here
+            datasets: [
+                {
+                    label: 'RAM Usage (%)',
+                    data: [],
+                    borderColor: '#f38ba8',
+                    backgroundColor: 'rgba(243, 139, 168, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true
+                },
+                {
+                    label: 'Disk Usage (%)',
+                    data: [],
+                    borderColor: '#a6e3a1',
+                    backgroundColor: 'rgba(166, 227, 161, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { min: 0, max: 100, grid: { color: '#45475a' } },
+                x: { grid: { display: false } }
+            },
+            plugins: {
+                legend: { labels: { color: '#cdd6f4' } }
+            }
+        }
+    });
+
+    // Open WebSocket connection
     const socket = new WebSocket('ws://localhost:8080');
 
     socket.onopen = () => {
@@ -59,21 +115,33 @@
     };
 
     socket.onmessage = (event) => {
-        // Parse the real-time JSON data from Java
         const data = JSON.parse(event.data);
 
-        // Update the UI dynamically
+        // Update the text cards
         document.getElementById('ram-val').innerText = data.ram.toFixed(1) + '%';
-        document.getElementById('disk-val').innerText = data.disk.toFixed(1) + '%';
+        document.getElementById('disk-val').innerText = data.disk.
+toFixed(1) + '%';
+
+        // Update the chart dataset
+        const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+        liveChart.data.labels.push(now);
+        liveChart.data.datasets[0].data.push(data.ram);
+        liveChart.data.datasets[1].data.push(data.disk);
+
+        // Keep only the last 15 seconds of data on screen to prevent overcrowding
+        if (liveChart.data.labels.length > 15) {
+            liveChart.data.labels.shift();
+            liveChart.data.datasets[0].data.shift();
+            liveChart.data.datasets[1].data.shift();
+        }
+
+        liveChart.update('none'); // Update without full animation for high performance
     };
 
     socket.onclose = () => {
         document.getElementById('status').innerText = '🔴 Disconnected from Server';
         document.getElementById('status').style.color = '#f38ba8';
-    };
-
-    socket.onerror = (error) => {
-        console.error('WebSocket Error:', error);
     };
 </script>
 </body>
