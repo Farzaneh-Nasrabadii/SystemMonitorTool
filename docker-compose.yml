@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  # 1. PostgreSQL Database Service
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: postgres_container
+    environment:
+      POSTGRES_DB: system_monitor
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: fr001009
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # 2. Java Application Service
+  java-app:
+    build: .
+    container_name: java_app_container
+    network_mode: "host" # Allows the app to access host system metrics and database easily
+    depends_on:
+      - postgres-db # Ensures the database starts before the Java app
+
+volumes:
+  postgres_data: # Persists database data even when containers are stopped
