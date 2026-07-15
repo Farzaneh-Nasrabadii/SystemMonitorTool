@@ -11,32 +11,27 @@ import javax.mail.internet.MimeMessage;
 
 public class EmailAlertManager {
 
-    // Configuration for Gmail SMTP Server
-    private static final String SMTP_HOST = "smtp.gmail.com";
-    private static final String SMTP_PORT = "587";
+    // Default configuration for Mailhog (local development)
+    private static final String SMTP_HOST = "localhost";
+    private static final String SMTP_PORT = "1025"; // Mailhog SMTP port
 
-    // Read credentials from environment variables
-    private static final String SENDER_EMAIL = System.getenv("EMAIL_USER") != null ? System.getenv("EMAIL_USER") : "farzanehnasrabadii@gmail.com";
-    private static final String APP_PASSWORD = System.getenv("EMAIL_PASS") != null ? System.getenv("EMAIL_PASS") : "yqdznwqlzzaafxuy";
-    private static final String RECEIVER_EMAIL = System.getenv("EMAIL_RECEIVER") != null ? System.getenv("EMAIL_RECEIVER") : "faranehnasrabadii@gmail.com";
+    // Credentials (not strictly required by Mailhog, but kept for compatibility)
+    private static final String SENDER_EMAIL = "system-monitor@local.com";
+    private static final String RECEIVER_EMAIL = "admin@local.com";
 
     /**
      * Sends an email notification to the administrator.
      */
     public static void sendEmailAlert(String subject, String messageText) {
-        // Set up server properties
+        // Set up server properties for Mailhog (no TLS/Auth required for local testing)
         Properties prop = new Properties();
         prop.put("mail.smtp.host", SMTP_HOST);
         prop.put("mail.smtp.port", SMTP_PORT);
-        prop.put("mail.smtp.auth", "true");
-        prop.put("mail.smtp.starttls.enable", "true"); // Secure connection requirement
+        prop.put("mail.smtp.auth", "false"); // Mailhog doesn't need auth
+        prop.put("mail.smtp.starttls.enable", "false"); // Mailhog doesn't need TLS
 
-        // Create a session with authentication
-        Session session = Session.getInstance(prop, new javax.mail.Authenticator() {
-            protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(SENDER_EMAIL, APP_PASSWORD);
-            }
-        });
+        // Create a session
+        Session session = Session.getInstance(prop);
 
         try {
             // Create a default MimeMessage object
@@ -47,12 +42,12 @@ public class EmailAlertManager {
             message.setText(messageText);
 
             // Send the email
-            System.out.println("Attempting to send an email alert...");
+            System.out.println("⚡ [Email Service] Attempting to send local alert via Mailhog...");
             Transport.send(message);
-            System.out.println("Email alert sent successfully!");
+            System.out.println("✅ [Email Service] Local alert sent successfully!");
 
         } catch (MessagingException e) {
-            System.err.println("Failed to send email alert: " + e.getMessage());
+            System.err.println("❌ [Email Service] Failed to send email alert: " + e.getMessage());
             e.printStackTrace();
         }
     }

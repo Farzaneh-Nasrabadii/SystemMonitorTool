@@ -14,13 +14,22 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  # 2. Java Application Service
+  # 2. Mailhog Service (Fake SMTP Server for developers)
+  mailhog:
+    image: mailhog/mailhog
+    container_name: mailhog_container
+    ports:
+      - "1025:1025" # SMTP port for sending emails
+      - "8025:8025" # Web UI port to view emails in browser
+
+  # 3. Java Application Service
   java-app:
     build: .
     container_name: java_app_container
     network_mode: "host" # Allows the app to access host system metrics and database easily
     depends_on:
-      - postgres-db # Ensures the database starts before the Java app
+      - postgres-db
+      - mailhog
 
 volumes:
-  postgres_data: # Persists database data even when containers are stopped
+  postgres_data:
