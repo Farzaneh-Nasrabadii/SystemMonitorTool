@@ -74,14 +74,24 @@ public class SystemMonitor extends WebSocketServer {
                 }
 
                 // 3. Evaluate real-time critical system thresholds for email alerting
-                if (currentRamUsage > 85.0 || currentDiskUsage > 90.0) {
-                    EmailAlertManager.sendEmailAlert("⚠️ CRITICAL SPIKE", "System resource exceeded limits!");
-                }
+                checkThresholdsAndAlert(currentRamUsage, currentDiskUsage);
             }
             process.waitFor();
         } catch (Exception e) {
             System.err.println("Streaming error: " + e.getMessage());
         }
+    }
+
+    /**
+     * Evaluates thresholds and triggers email alerts if necessary.
+     * Returns true if an alert was triggered, false otherwise.
+     */
+    public static boolean checkThresholdsAndAlert(double ram, double disk) {
+        if (ram > 85.0 || disk > 90.0) {
+            EmailAlertManager.sendEmailAlert("⚠️ CRITICAL SPIKE", "System resource exceeded limits!");
+            return true;
+        }
+        return false;
     }
 
     public static double getRamUsagePercentage() {
@@ -95,7 +105,8 @@ public class SystemMonitor extends WebSocketServer {
                 if (line.startsWith("Mem:")) {
                     String[] tokens = line.split("\\s+");
                     double totalRam = Double.parseDouble(tokens[1]);
-                    double usedRam = Double.parseDouble(tokens[2]);
+                    double usedRam = Double.
+                            parseDouble(tokens[2]);
                     usage = (usedRam / totalRam) * 100;
                     usage = Math.round(usage * 100.0) / 100.0;
                     break;
@@ -105,6 +116,7 @@ public class SystemMonitor extends WebSocketServer {
         } catch (Exception e) {}
         return usage;
     }
+
     public static double getDiskUsagePercentage() {
         String[] command = {"df", "-h"};
         double usage = -1;

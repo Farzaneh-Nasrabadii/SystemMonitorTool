@@ -24,4 +24,30 @@ public class SystemMonitorTest {
         assertTrue(diskUsage == -1 || (diskUsage >= 0.0 && diskUsage <= 100.0),
                 "Disk usage percentage must be between 0 and 100, or -1 in case of failure");
     }
+
+    @Test
+    public void testAlertIsTriggeredWhenRamExceedsThreshold() {
+        // Given: RAM is dangerously high (90%), but Disk is fine (40%)
+        double fakeRam = 90.0;
+        double fakeDisk = 40.0;
+
+        // When: We check the thresholds
+        boolean isAlertSent = SystemMonitor.checkThresholdsAndAlert(fakeRam, fakeDisk);
+
+        // Then: The system must trigger the alert
+        assertTrue(isAlertSent, "Alert should be triggered when RAM is above 85%");
+    }
+
+    @Test
+    public void testAlertIsNotTriggeredWhenMetricsAreNormal() {
+        // Given: Both RAM (40%) and Disk (50%) are safe and within limits
+        double fakeRam = 40.0;
+        double fakeDisk = 50.0;
+
+        // When: We check the thresholds
+        boolean isAlertSent = SystemMonitor.checkThresholdsAndAlert(fakeRam, fakeDisk);
+
+        // Then: The system should NOT trigger any alert
+        assertFalse(isAlertSent, "Alert should NOT be triggered when metrics are normal");
+    }
 }
