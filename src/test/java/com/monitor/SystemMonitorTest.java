@@ -50,4 +50,16 @@ public class SystemMonitorTest {
         // Then: The system should NOT trigger any alert
         assertFalse(isAlertSent, "Alert should NOT be triggered when metrics are normal");
     }
+    @Test
+    public void testDatabaseLoggingWorksSuccessfully() {
+        // Given: Create a mock system metrics object
+        double mockDisk = 45.5;
+        double mockRam = 60.2;
+        SystemMetrics mockMetrics = new SystemMetrics(mockDisk, mockRam);
+
+        // When & Then: Assert that saving to the database does not throw any exceptions
+        assertDoesNotThrow(() -> {
+            DatabaseManager.saveMetrics(mockMetrics);
+        }, "Database insertion failed! Check if PostgreSQL container is running and configuration is correct.");
+    }
 }
