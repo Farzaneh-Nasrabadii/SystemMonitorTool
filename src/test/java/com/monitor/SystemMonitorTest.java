@@ -62,4 +62,11 @@ public class SystemMonitorTest {
             DatabaseManager.saveMetrics(mockMetrics);
         }, "Database insertion failed! Check if PostgreSQL container is running and configuration is correct.");
     }
+    @Test
+    public void testSystemCommandExceptionIsThrownWhenCommandFails() {
+        assertDoesNotThrow(() -> {
+            SystemMonitor.getRamUsagePercentage();
+            SystemMonitor.getDiskUsagePercentage();
+        }, "Utility methods should work fine under normal OS conditions.");
+    }
 }

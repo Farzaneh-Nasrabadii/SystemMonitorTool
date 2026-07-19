@@ -3,6 +3,7 @@ package com.monitor;
 import org.java_websocket.server.WebSocketServer;
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
+import com.monitor.exception.SystemCommandException;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
@@ -56,25 +57,34 @@ public class SystemMonitor extends WebSocketServer {
             int databaseCounter = 0;
 
             while ((line = reader.readLine()) != null) {
-                double currentRamUsage = getRamUsagePercentage();
-                double currentDiskUsage = getDiskUsagePercentage();
+                try {
+                    double currentRamUsage = getRamUsagePercentage();
+                    double currentDiskUsage = getDiskUsagePercentage();
 
-                // 1. Stream real-time data to connected frontend clients via JSON payload
-                String jsonPayload = String.format("{\"ram\": %.2f, \"disk\": %.2f}", currentRamUsage, currentDiskUsage);
-                server.broadcast(jsonPayload);
+                    // 1. Stream real-time data to connected frontend clients via JSON payload
+                    String jsonPayload = String.format("{\"ram\": %.2f, \"disk\": %.2f}", currentRamUsage, currentDiskUsage);
+                    server.broadcast(jsonPayload);
 
-                databaseCounter++;
+                    databaseCounter++;
 
-                // 2. Database Optimization: Log metrics only once every 60 seconds (60 loops)
-                if (databaseCounter >= 60) {
-                    System.out.println("💾 [DATABASE LOG] Saving 1-minute interval snapshot to PostgreSQL...");
-                    SystemMetrics metrics = new SystemMetrics(currentDiskUsage, currentRamUsage);
-                    DatabaseManager.saveMetrics(metrics);
-                    databaseCounter = 0;
+                    // 2. Database Optimization: Log metrics only once every 60 seconds (60 loops)
+                    if (databaseCounter >= 60) {
+                        System.out.println("💾 [DATABASE LOG] Saving 1-minute interval snapshot to PostgreSQL...");
+                        SystemMetrics metrics = new SystemMetrics(currentDiskUsage, currentRamUsage);
+                        DatabaseManager.saveMetrics(metrics);
+                        databaseCounter = 0;
+                    }
+
+                    // 3. Evaluate real-time critical system thresholds for email alerting
+                    checkThresholdsAndAlert(currentRamUsage, currentDiskUsage);
+
+                } catch (SystemCommandException e) {
+                    // Gracefully catch our custom exception to keep the streaming loop alive
+                    System.err.println("❌ [OS COMMAND ERROR] " + e.getMessage());
+                    if (e.getCause() != null) {
+                        System.err.println("➡️ Underlying Cause: " + e.getCause().getMessage());
+                    }
                 }
-
-                // 3. Evaluate real-time critical system thresholds for email alerting
-                checkThresholdsAndAlert(currentRamUsage, currentDiskUsage);
             }
             process.waitFor();
         } catch (Exception e) {
@@ -94,6 +104,10 @@ public class SystemMonitor extends WebSocketServer {
         return false;
     }
 
+    /**
+     * Executes native OS commands to retrieve current RAM usage percentage.
+     * @throws SystemCommandException if execution or parsing fails.
+     */
     public static double getRamUsagePercentage() {
         String[] command = {"free", "-m"};
         double usage = -1;
@@ -105,18 +119,24 @@ public class SystemMonitor extends WebSocketServer {
                 if (line.startsWith("Mem:")) {
                     String[] tokens = line.split("\\s+");
                     double totalRam = Double.parseDouble(tokens[1]);
-                    double usedRam = Double.
-                            parseDouble(tokens[2]);
+                    double usedRam = Double.parseDouble(tokens[2]);
                     usage = (usedRam / totalRam) * 100;
                     usage = Math.round(usage * 100.0) / 100.0;
                     break;
                 }
             }
             process.waitFor();
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            // Translate raw low-level exceptions into our custom domain exception
+            throw new SystemCommandException("Failed to execute or parse RAM metrics command from the OS environment.", e);
+        }
         return usage;
     }
 
+    /**
+     * Executes native OS commands to retrieve root directory Disk usage percentage.
+     * @throws SystemCommandException if execution or parsing fails.
+     */
     public static double getDiskUsagePercentage() {
         String[] command = {"df", "-h"};
         double usage = -1;
@@ -124,7 +144,7 @@ public class SystemMonitor extends WebSocketServer {
             Process process = new ProcessBuilder(command).start();
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
-            reader.readLine();
+            reader.readLine(); // Skip the header line
             while ((line = reader.readLine()) != null) {
                 if (line.endsWith(" /")) {
                     String[] tokens = line.split("\\s+");
@@ -133,7 +153,10 @@ public class SystemMonitor extends WebSocketServer {
                 }
             }
             process.waitFor();
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            // Translate raw low-level exceptions into our custom domain exception
+            throw new SystemCommandException("Failed to execute or parse Disk metrics command from the OS environment.", e);
+        }
         return usage;
     }
 }
