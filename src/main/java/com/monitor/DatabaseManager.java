@@ -1,5 +1,6 @@
 package com.monitor;
 
+import com.monitor.exception.DatabaseOperationException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -20,6 +21,7 @@ public class DatabaseManager {
 
     /**
      * Inserts a new system metrics record into the database.
+     * @throws DatabaseOperationException if connection or SQL execution fails.
      */
     public static void saveMetrics(SystemMetrics metrics) {
         // Updated SQL to include ram_usage
@@ -30,7 +32,7 @@ public class DatabaseManager {
 
             // Bind values to the SQL query parameters
             pstmt.setDouble(1, metrics.getDiskUsagePercentage());
-            pstmt.setDouble(2, metrics.getRamUsagePercentage()); // New parameter
+            pstmt.setDouble(2, metrics.getRamUsagePercentage());
             pstmt.setTimestamp(3, Timestamp.valueOf(metrics.getTimestamp()));
 
             int rowsInserted = pstmt.executeUpdate();
@@ -39,8 +41,8 @@ public class DatabaseManager {
             }
 
         } catch (Exception e) {
-            System.err.println("Database error while saving metrics: " + e.getMessage());
-            e.printStackTrace();
+            // Translate low-level SQL and connection failures into a custom domain exception
+            throw new DatabaseOperationException("Failed to save metrics snapshot into PostgreSQL database.", e);
         }
     }
 }

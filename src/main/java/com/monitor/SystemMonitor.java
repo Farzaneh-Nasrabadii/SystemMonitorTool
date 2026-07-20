@@ -4,6 +4,7 @@ import org.java_websocket.server.WebSocketServer;
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import com.monitor.exception.SystemCommandException;
+import com.monitor.exception.DatabaseOperationException;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
@@ -79,8 +80,14 @@ public class SystemMonitor extends WebSocketServer {
                     checkThresholdsAndAlert(currentRamUsage, currentDiskUsage);
 
                 } catch (SystemCommandException e) {
-                    // Gracefully catch our custom exception to keep the streaming loop alive
+                    // Gracefully catch custom OS command failures to keep the stream alive
                     System.err.println("❌ [OS COMMAND ERROR] " + e.getMessage());
+                    if (e.getCause() != null) {
+                        System.err.println("➡️ Underlying Cause: " + e.getCause().getMessage());
+                    }
+                } catch (DatabaseOperationException e) {
+                    // Gracefully catch custom database failures without crashing the application loop
+                    System.err.println("❌ [DATABASE ERROR] " + e.getMessage());
                     if (e.getCause() != null) {
                         System.err.println("➡️ Underlying Cause: " + e.getCause().getMessage());
                     }
