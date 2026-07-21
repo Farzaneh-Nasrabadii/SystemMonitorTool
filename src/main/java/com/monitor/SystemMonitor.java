@@ -8,6 +8,7 @@ import com.monitor.exception.DatabaseOperationException;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
+import com.monitor.config.ConfigManager;
 
 public class SystemMonitor extends WebSocketServer {
 
@@ -41,7 +42,7 @@ public class SystemMonitor extends WebSocketServer {
     }
 
     public static void main(String[] args) {
-        int port = 8080;
+        int port = ConfigManager.getInt("PORT", 8080);
         SystemMonitor server = new SystemMonitor(port);
         server.start();
 
